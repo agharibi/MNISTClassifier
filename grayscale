@@ -1,0 +1,51 @@
+#!/usr/bin/python3
+from Network import network
+import tensorflow as tf
+import cv2
+import numpy as np
+
+NETWORK_IMAGE_DIMENSIONS = (28, 28)
+height = 1000
+width = 1000
+
+#Construct network
+net = network.Network()
+net.build()
+sess = tf.Session()
+net.restore(sess)
+
+#Open Video Capture Session
+vc = cv2.VideoCapture(0)
+digit = np.zeros((height, width, 3), np.uint8)
+
+if vc.isOpened():
+    rval, frame = vc.read()
+else:
+    rval = False
+
+while rval:
+    inf_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    inf_image = cv2.resize(inf_image, NETWORK_IMAGE_DIMENSIONS)
+    inf_image = cv2.convertScaleAbs(inf_image, -1, 2.0, 50)
+    inf_image = (255 - inf_image)
+    #cv2.imshow("Original", frame)
+    cv2.imshow("Scaled Down", inf_image)
+
+    inf_image = inf_image.flatten() / 255.0
+    pred = net.inference_one(sess,inf_image)
+
+    pred_txt = str(pred)
+    cv2.putText(img=frame, text=pred_txt, org=(450,450), fontFace=cv2.FONT_HERSHEY_COMPLEX,
+            fontScale=9, color=[255, 255, 255], thickness=3)
+    cv2.imshow("Recognized Digit", frame)
+
+
+    rval, frame = vc.read()
+
+
+    key = cv2.waitKey(20)
+    if key == 27: #exit on ESC
+        break
+
+#cv2.destroyWindow("preview")
+vc.release()

@@ -22,10 +22,12 @@ class Network:
       return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                         strides=[1, 2, 2, 1], padding='SAME')
 
-    def __init__(self):
+    def __init__(self, save_loc=None):
         self.x = tf.placeholder(tf.float32, shape=[None, 784]) # Define input placeholder
         self.y_ = tf.placeholder(tf.float32, shape=[None, 10]) #Define output placeholder
-
+        if save_loc is None:
+            save_loc = "saved_model/network_weights.ckpt"
+        self.save_loc = save_loc
 
     def build(self):
 
@@ -71,17 +73,63 @@ class Network:
         correct_prediction = tf.equal(tf.argmax(self.y_conv,1), tf.argmax(self.y_,1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-
+        saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             for i in range(20000):
                 batch = mnist.train.next_batch(50)
-                if i%100 == 0:
+                if i % 100 == 0:
                     train_accuracy = accuracy.eval(feed_dict={
                         self.x:batch[0], self.y_: batch[1], self.keep_prob: 1.0})
                     print("step %d, training accuracy %g"%(i, train_accuracy))
+                    saver.save(sess, self.save_loc)
                 train_step.run(feed_dict={self.x: batch[0], self.y_: batch[1], self.keep_prob: 0.5})
 
             print("test accuracy %g"%accuracy.eval(feed_dict={
                 self.x: mnist.test.images, self.y_: mnist.test.labels, self.keep_prob: 1.0}))
+    def inference(self):
+        mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+
+        saver = tf.train.Saver()
+
+        with tf.Session() as sess:
+
+            sess.run(tf.global_variables_initializer())
+
+            saver.restore(sess, self.save_loc)
+
+            test_data, test_labels = mnist.test.images, mnist.test.labels
+
+            feed_dict = {
+                self.x: test_data,
+                self.y_: test_labels,
+                self.keep_prob: 0.5
+            }
+            pred = tf.argmax(self.y_conv,1)
+
+            preds = sess.run(pred, feed_dict=feed_dict)
+
+            print(preds)
+
+    def restore(self, sess):
+        saver = tf.train.Saver()
+
+        sess.run(tf.global_variables_initializer())
+
+        saver.restore(sess, self.save_loc)
+    def inference_one(self, sess, image):
+
+        image = image.reshape(1, 784)
+
+        feed_dict = {
+            self.x: image,
+            #self.y_: test_labels,
+            self.keep_prob: 0.5
+        }
+        pred = tf.argmax(self.y_conv,1)
+
+        preds = sess.run(pred, feed_dict=feed_dict)
+
+        #print(preds)
+        return preds[0]
 
