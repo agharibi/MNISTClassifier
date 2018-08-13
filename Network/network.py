@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
+#from tensorflow.examples.tutorials.mnist import input_data
 import os
 
 class Network:
@@ -65,7 +65,7 @@ class Network:
         self.y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
     def train(self):
-        mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+        mnist = tf.examples.tutorials.mnist.input_data.read_data_sets('MNIST_data', one_hot=True)
 
         cross_entropy = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(labels=self.y_, logits=self.y_conv))
@@ -88,7 +88,8 @@ class Network:
             print("test accuracy %g"%accuracy.eval(feed_dict={
                 self.x: mnist.test.images, self.y_: mnist.test.labels, self.keep_prob: 1.0}))
     def inference(self):
-        mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+        #from tensorflow.examples.tutorials.mnist import input_data
+        mnist = tf.examples.tutorials.mnist.input_data.read_data_sets('MNIST_data', one_hot=True)
 
         saver = tf.train.Saver()
 
